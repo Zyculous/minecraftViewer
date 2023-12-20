@@ -5,6 +5,7 @@ from tkinter import Label, Toplevel
 
 
 
+
 slots = {
     #offhand
     -106: (175, 155),
@@ -54,8 +55,9 @@ slots = {
     102: (20, 65),
     103: (20, 20)    
 }
+filled_slots= []
 
-def insert_nbt_data(tree, parent, nbt_data, canvas):
+def insert_nbt_data(tree, parent, nbt_data, canvas, window):
     if isinstance(nbt_data, dict):
         for key, value in nbt_data.items():
             if key == "Inventory" and isinstance(value, list):
@@ -63,6 +65,10 @@ def insert_nbt_data(tree, parent, nbt_data, canvas):
                     if isinstance(item, dict):                
                         # Get the directory of the script
                         script_dir = os.path.dirname(os.path.realpath(__file__))
+                        
+                        file_path = os.path.join(script_dir, os.pardir, "assets", "air" + ".png")
+                        image = Image.open(file_path).resize((30, 30))
+                        window.selected_photo = ImageTk.PhotoImage(image)
 
                         # Get the filename of the ID
                         id_filename = str(item.get('id', '')).split(":")[1]
@@ -78,7 +84,7 @@ def insert_nbt_data(tree, parent, nbt_data, canvas):
                                     id_filename = line.split("/")[1].split(".")[0] + ".png"
                                     break
 
-                        file_path = os.path.join(script_dir, os.pardir, "assets", "itemTextures", id_filename + ".png")
+                        file_path = os.path.join(script_dir, os.pardir, "assets", "item", id_filename + ".png")
                         # Check if the file exists
                         if not os.path.exists(file_path):
                             print(f"File does not exist: {file_path}")
@@ -95,22 +101,37 @@ def insert_nbt_data(tree, parent, nbt_data, canvas):
                                 if slots.__contains__(slot):
                                     row, col = slots[slot]
                                     image = canvas.create_image(row, col, anchor=tk.NW, image=photo)
-                                    canvas.tag_bind(image, "<Button-1>", lambda e, i=image: canvas.delete(i))
-                                    
+                                    canvas.tag_bind(image, "<Button-1>", lambda e, i=image, row=row, col=col: changePicture(canvas, i, window, row, col))
+                                    filled_slots.append(slot)
                                     label = tk.Label(image=photo, text=id_filename)
                                     label.image = photo # keep a reference!
                                 else:
                                     print(f"Slot {slot} not found")
                             except Exception as e:
                                 print(f"An error occurred while loading the image: {e}")
+                for slot in slots:
+                    if not filled_slots.__contains__(slot):
+                        row, col = slots[slot]
+                        file_path = os.path.join(script_dir, os.pardir, "assets", "air.png")
+                        image = Image.open(file_path).resize((30, 30))
+                        photo = ImageTk.PhotoImage(image)
+                        image = canvas.create_image(row, col, anchor=tk.NW, image=photo)
+                        canvas.tag_bind(image, "<Button-1>", lambda e, i=image, row=row, col=col: changePicture(canvas, i, window, row, col))
+                        filled_slots.append(slot)
             elif isinstance(value, dict):
                 id = tree.insert(parent, 'end', text=key)
-                insert_nbt_data(tree, id, value, canvas)
+                insert_nbt_data(tree, id, value, canvas, window)
             else:
                 tree.insert(parent, 'end', text=f"{key}: {value}")
     else:
         tree.insert(parent, 'end', text=str(nbt_data))
-        
+
+def changePicture(canvas, element, window, row, col):
+    canvas.delete(element)
+    photo = window.selected_photo
+    image = canvas.create_image(row, col, anchor=tk.NW, image=window.selected_photo)
+    canvas.tag_bind(image, "<Button-1>", lambda e, i=image, row=row, col=col: changePicture(canvas, i, window, row, col))
+
 def show_inv(frame, window):
     script_dir = os.path.dirname(os.path.realpath(__file__))
     image_dir = os.path.join(script_dir, os.pardir, "assets", "item")

@@ -21,7 +21,7 @@ def open_file(canvas):
                 tree.delete(i)
             
             # Insert the parsed data into the tree view
-            insert_nbt_data(tree, '', data, canvas)
+            insert_nbt_data(tree, '', data, canvas, window)
         except Exception as e:
             print(f"An error occurred while parsing the file: {e}")
 
