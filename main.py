@@ -3,7 +3,7 @@ import os
 from tkinter import ttk, filedialog
 from PIL import Image, ImageTk
 from nbtParser import parse_nbt_file  
-from inventory.playerInvTree import insert_nbt_data
+from inventory.playerInvTree import *
 
 def open_file(canvas):
     canvas.delete("all")
@@ -32,15 +32,16 @@ window = tk.Tk()
 tree = ttk.Treeview(window)
 tree.pack(fill="x", expand=True)  # Resize the tree to fit its children
 
-#visual inventory viewer
-# Create a 9x4 grid box
-canvas = tk.Canvas(window, width=400, height=400, bg="white")
+# Create a canvas to display the inventory 
+canvas = tk.Canvas(window, width=800, height=400, bg="white")
 canvas.pack(fill="both", expand=True)
-
-
 img = ImageTk.PhotoImage(Image.open("assets/inventory.png").resize((400, 400)))
 canvas.background = img
 canvas.create_image(0, 0, anchor=tk.NW, image=img)
+
+frame = tk.Frame(canvas, width=400, height=400, bg="white")
+frame.pack(fill="y",expand=False)
+show_inv(frame, window)
 
 # Create a button to open the file chooser
 open_button = tk.Button(window, text="Open File", command=lambda:open_file(canvas))

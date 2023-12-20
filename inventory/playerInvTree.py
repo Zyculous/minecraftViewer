@@ -1,6 +1,9 @@
 import tkinter as tk
 import os
 from PIL import Image, ImageTk
+from tkinter import Label, Toplevel
+
+
 
 slots = {
     #offhand
@@ -62,18 +65,28 @@ def insert_nbt_data(tree, parent, nbt_data, canvas):
                         script_dir = os.path.dirname(os.path.realpath(__file__))
 
                         # Get the filename of the ID
-                        id_filename = str(item.get('id', '')).split(":")[1] + ".png"
+                        id_filename = str(item.get('id', '')).split(":")[1]
                         
                         
                         # Construct the file path
-                        file_path = os.path.join(script_dir, os.pardir, "assets", "item", id_filename)
+                        model_path = os.path.join(script_dir, os.pardir, "assets", "itemModels", id_filename + ".json")
+                        if os.path.exists(model_path):
+                            with open(model_path, "r") as f:
+                                lines = f.readlines()
+                            for line in lines:
+                                if line.startswith("parent"):
+                                    id_filename = line.split("/")[1].split(".")[0] + ".png"
+                                    break
 
+                        file_path = os.path.join(script_dir, os.pardir, "assets", "itemTextures", id_filename + ".png")
                         # Check if the file exists
                         if not os.path.exists(file_path):
                             print(f"File does not exist: {file_path}")
                             file_path = os.path.join(script_dir, "assets", "not_found_icon.png")
                         else:
                             try:
+                                
+                                
                                 # Load and display the image
                                 image = Image.open(file_path).resize((30, 30))
                                 photo = ImageTk.PhotoImage(image)
@@ -97,3 +110,58 @@ def insert_nbt_data(tree, parent, nbt_data, canvas):
                 tree.insert(parent, 'end', text=f"{key}: {value}")
     else:
         tree.insert(parent, 'end', text=str(nbt_data))
+        
+def show_inv(frame, window):
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    image_dir = os.path.join(script_dir, os.pardir, "assets", "item")
+    
+    # Create a scrollable canvas
+    canvas_frame = tk.Frame(frame)
+    canvas_frame.pack(fill="both", expand=True)
+    canvas = tk.Canvas(canvas_frame, width=400, height=400, bg="white")
+    canvas.pack(side="left", fill="both", expand=True)
+    
+    # Add a scrollbar to the canvas
+    scrollbar = tk.Scrollbar(canvas_frame, orient="vertical", command=canvas.yview)
+    scrollbar.pack(side="right", fill="y")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    # Bind the scrollbar to the canvas
+    def on_canvas_hover(event):
+        canvas.bind_all("<MouseWheel>", lambda event: canvas.yview_scroll(int(-1*(event.delta/120)), "units"))
+
+    def on_canvas_leave(event):
+        canvas.unbind_all("<MouseWheel>")
+
+    canvas.bind("<Enter>", on_canvas_hover)
+    canvas.bind("<Leave>", on_canvas_leave)
+    x = 5
+    y = 0
+    window.photos = []
+    for filename in os.listdir(image_dir):
+        if filename.endswith(".png"):
+            print(filename)
+            image_path = os.path.join(image_dir, filename)
+            image = Image.open(image_path).resize((30, 30))
+            photo = ImageTk.PhotoImage(image)
+            window.photos.append(photo)
+            label = Label(canvas, image=photo, text=filename)
+            img = canvas.create_image(x, y, anchor=tk.NW, image=photo)
+            c = tk.Canvas(frame, width=30, height=30, bg="white")
+            canvas.tag_bind(img, "<Button-1>", lambda e, p=photo, f=filename:selectPhoto(window, c, p, f))
+            
+            if x < 360:
+                x += 30
+            else:
+                x = 5
+                y += 30
+    # Configure the canvas scroll region
+    canvas.configure(scrollregion=canvas.bbox("all"))
+
+def selectPhoto(window, canvas, photo, text):
+    canvas.delete("all")
+    canvas.pack(side="left", fill="both", expand=True)
+    canvas.create_image(0, 0, anchor=tk.NW, image=photo)
+    canvas.create_text(35,0 , anchor=tk.NW, text=text)
+    window.selected_photo = photo
+    
