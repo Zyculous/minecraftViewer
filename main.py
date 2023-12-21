@@ -48,4 +48,12 @@ open_button = tk.Button(window, text="Open File", command=lambda:open_file(canva
 open_button.pack()
 
 # Start the main event loop
+window.bind("<Escape>", lambda e: resetPhoto())
+
+def resetPhoto():
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    file_path = os.path.join(script_dir, "assets", "air" + ".png")
+    image = Image.open(file_path).resize((30, 30))
+    window.selected_photo = ImageTk.PhotoImage(image)
+
 window.mainloop()
